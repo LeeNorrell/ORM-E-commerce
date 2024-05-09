@@ -2,21 +2,55 @@ const router = require('express').Router();
 const { Product, Category, Tag, ProductTag } = require('../../models');
 
 // The `/api/products` endpoint
+const Product = require('../../models/Product');
 
 // get all products
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   // find all products
+  try {
+    const productData = await Product.findAll({
+      include: [{ model: Category, model: Tag}],
+    });
+    res.status(200).json(productData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
   // be sure to include its associated Category and Tag data
 });
 
 // get one product
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   // find a single product by its `id`
+  try {
+    const productData = await Product.findByPk(req.params.id, {
+      include: [{ model: Category, model: Tag }],
+    });
+    if (!productData) {
+      res.status(404).json({ message: 'No product can be found with that id.'});
+      return;
+    }
+    res.status(200).json(productData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
   // be sure to include its associated Category and Tag data
 });
 
 // create new product
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
+  Product.create({
+    product_name: "Basketball",
+    price: 200.00,
+    stock: 3,
+    tagIds: [1]
+  })
+  .then((newProduct) => {
+    res.json(newProduct);
+  })
+  .catch((err) => {
+    res.json(err);
+  });
+});
   /* req.body should look like this...
     {
       product_name: "Basketball",
@@ -45,7 +79,6 @@ router.post('/', (req, res) => {
       console.log(err);
       res.status(400).json(err);
     });
-});
 
 // update product
 router.put('/:id', (req, res) => {
